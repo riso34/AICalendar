@@ -1,47 +1,81 @@
 package com.example.myapplication
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.myapplication.ui.theme.MyApplicationTheme
+import android.widget.Button
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var calendarRecyclerView:RecyclerView
+    private lateinit var monthYearText:TextView
+    private lateinit var selectedDate:LocalDate
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MyApplicationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+        setContentView(R.layout.activity_main)
+
+        val nextButton: Button = findViewById(R.id.nextButton)
+        val previousButton:Button = findViewById(R.id.previousButton)
+
+        initWidgets()
+        selectedDate = LocalDate.now()
+        setMonthView()
+
+        previousButton.setOnClickListener {
+            initWidgets()
+            selectedDate = selectedDate.minusMonths(1)
+            setMonthView()
+        }
+
+        nextButton.setOnClickListener {
+            initWidgets()
+            selectedDate = selectedDate.plusMonths(1)
+            setMonthView()
+        }
+
+
+    }
+
+    private fun initWidgets(){
+        calendarRecyclerView = findViewById(R.id.rv)
+        monthYearText = findViewById(R.id.monthText)
+    }
+
+    private fun setMonthView(){
+        monthYearText.text = monthYear(selectedDate)
+        val daysInMonth = daysInMonthArray(selectedDate)
+        val calendarAdapter = RecyclerviewAdapter(daysInMonth)
+        val layoutManager: LayoutManager = GridLayoutManager(applicationContext, 7)
+        calendarRecyclerView.layoutManager = layoutManager
+        calendarRecyclerView.adapter = calendarAdapter
+    }
+
+    private fun daysInMonthArray(date: LocalDate?): ArrayList<Long> {
+        val daysInMonthArray = ArrayList<Long>()
+        val yearMonth = YearMonth.from(date)
+        val daysInMonth = yearMonth.lengthOfMonth()
+        val firstOfMonth = selectedDate.withDayOfMonth(1)
+        val dayOfWeek = firstOfMonth.dayOfWeek.value
+        for (i in 1..42){
+            if (i <= dayOfWeek || i > daysInMonth + dayOfWeek) {
+                daysInMonthArray.add(0)
+            } else {
+                daysInMonthArray.add((i - dayOfWeek).toLong())
             }
         }
+        return  daysInMonthArray
+    }
+
+    private fun monthYear(date: LocalDate?): String {
+        val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+        return date!!.format(formatter)
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyApplicationTheme {
-        Greeting("Android")
-    }
-}
