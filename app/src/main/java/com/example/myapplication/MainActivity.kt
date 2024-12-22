@@ -1,81 +1,130 @@
+// MainActivity.kt
 package com.example.myapplication
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
+import android.speech.RecognizerIntent
+import android.widget.CalendarView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView.LayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var calendarRecyclerView:RecyclerView
-    private lateinit var monthYearText:TextView
-    private lateinit var selectedDate:LocalDate
+    private lateinit var calendarView: CalendarView
+    private lateinit var voiceButton: FloatingActionButton
+    private lateinit var taskButton: FloatingActionButton
+    private val SPEECH_REQUEST_CODE = 0
+    private val RECORD_AUDIO_PERMISSION_CODE = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val nextButton: Button = findViewById(R.id.nextButton)
-        val previousButton:Button = findViewById(R.id.previousButton)
+        setupCalendarView()
+        setupVoiceButton()
+        setupTaskButton()
+    }
 
-        initWidgets()
-        selectedDate = LocalDate.now()
-        setMonthView()
-
-        previousButton.setOnClickListener {
-            initWidgets()
-            selectedDate = selectedDate.minusMonths(1)
-            setMonthView()
+    private fun setupCalendarView() {
+        calendarView = findViewById(R.id.calendarView)
+        calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+            // 日付が選択されたときの処理
+            showEventsForDate(year, month, dayOfMonth)
         }
-
-        nextButton.setOnClickListener {
-            initWidgets()
-            selectedDate = selectedDate.plusMonths(1)
-            setMonthView()
-        }
-
-
     }
 
-    private fun initWidgets(){
-        calendarRecyclerView = findViewById(R.id.rv)
-        monthYearText = findViewById(R.id.monthText)
-    }
-
-    private fun setMonthView(){
-        monthYearText.text = monthYear(selectedDate)
-        val daysInMonth = daysInMonthArray(selectedDate)
-        val calendarAdapter = RecyclerviewAdapter(daysInMonth)
-        val layoutManager: LayoutManager = GridLayoutManager(applicationContext, 7)
-        calendarRecyclerView.layoutManager = layoutManager
-        calendarRecyclerView.adapter = calendarAdapter
-    }
-
-    private fun daysInMonthArray(date: LocalDate?): ArrayList<Long> {
-        val daysInMonthArray = ArrayList<Long>()
-        val yearMonth = YearMonth.from(date)
-        val daysInMonth = yearMonth.lengthOfMonth()
-        val firstOfMonth = selectedDate.withDayOfMonth(1)
-        val dayOfWeek = firstOfMonth.dayOfWeek.value
-        for (i in 1..42){
-            if (i <= dayOfWeek || i > daysInMonth + dayOfWeek) {
-                daysInMonthArray.add(0)
+    private fun setupVoiceButton() {
+        voiceButton = findViewById(R.id.voiceButton)
+        voiceButton.setOnClickListener {
+            if (checkAudioPermission()) {
+                startVoiceRecognition()
             } else {
-                daysInMonthArray.add((i - dayOfWeek).toLong())
+                requestAudioPermission()
             }
         }
-        return  daysInMonthArray
     }
 
-    private fun monthYear(date: LocalDate?): String {
-        val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
-        return date!!.format(formatter)
+    private fun setupTaskButton() {
+        taskButton = findViewById(R.id.taskButton)
+        taskButton.setOnClickListener {
+            if (checkAudioPermission()) {
+                startVoiceRecognition()
+            } else {
+                requestAudioPermission()
+            }
+        }
+    }
+
+    private fun checkAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestAudioPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.RECORD_AUDIO),
+            RECORD_AUDIO_PERMISSION_CODE
+        )
+    }
+
+    private fun startVoiceRecognition() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "タスクを話してください")
+        }
+        startActivityForResult(intent, SPEECH_REQUEST_CODE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
+            val spokenText = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            if (spokenText != null) {
+                processVoiceInput(spokenText)
+            }
+        }
+    }
+
+    private fun processVoiceInput(text: String) {
+        // 音声入力の解析とタスク作成
+        val taskManager = TaskManager(this)
+        val task = parseVoiceInput(text)
+        if (task != null) {
+            taskManager.addTask(task)
+            Toast.makeText(this, "タスクを追加しました: ${task.title}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun parseVoiceInput(text: String): Task? {
+        // 簡単な自然言語処理で音声入力を解析
+        // 例: "明日の3時にミーティング"
+        try {
+            val words = text.split(" ")
+            // 基本的なパターンマッチング
+            // 実際のアプリではより高度なNLP処理が必要
+            return Task(
+                title = text,
+                date = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, 1) }.time,
+                description = ""
+            )
+        } catch (e: Exception) {
+            Toast.makeText(this, "タスクの解析に失敗しました", Toast.LENGTH_SHORT).show()
+            return null
+        }
+    }
+
+    private fun showEventsForDate(year: Int, month: Int, dayOfMonth: Int) {
+        val taskManager = TaskManager(this)
+        val tasks = taskManager.getTasksForDate(year, month, dayOfMonth)
+        // タスク一覧を表示するダイアログやフラグメントを表示
     }
 }
-

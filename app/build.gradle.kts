@@ -57,10 +57,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.coordinatorlayout)
     implementation(libs.androidx.recyclerview)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.recyclerview)
+    implementation(libs.material)
+
 
 
 }
