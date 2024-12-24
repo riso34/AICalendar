@@ -8,16 +8,22 @@ import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.widget.CalendarView
 import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.navigation.NavigationView
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var calendarView: CalendarView
     private lateinit var voiceButton: FloatingActionButton
     private lateinit var taskButton: FloatingActionButton
+    private lateinit var drawerLayout: DrawerLayout
     private val SPEECH_REQUEST_CODE = 0
     private val RECORD_AUDIO_PERMISSION_CODE = 1
 
@@ -28,6 +34,50 @@ class MainActivity : AppCompatActivity() {
         setupCalendarView()
         setupVoiceButton()
         setupTaskButton()
+
+        // ツールバーの設定
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        //ドロワーレイアウトの設定
+        drawerLayout = findViewById(R.id.drawer_layout)
+        val navigationView: NavigationView = findViewById(R.id.nav_view)
+
+        // ハンバーガーメニューの設定
+        val toggle = ActionBarDrawerToggle(
+            this,
+            drawerLayout,
+            toolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+
+        // ナビゲーションアイテムのクリックリスナー
+        navigationView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_calendar -> {
+                    // カレンダー画面の処理
+                }
+                R.id.nav_tasks -> {
+                    // タスク一覧画面の処理
+                }
+                R.id.nav_settings -> {
+                    // 設定画面の処理
+                }
+            }
+            drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
+    }
+
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
     }
 
     private fun setupCalendarView() {
