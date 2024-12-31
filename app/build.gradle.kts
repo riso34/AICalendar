@@ -1,4 +1,5 @@
 plugins {
+    id("com.google.devtools.ksp")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -30,9 +31,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+
     }
     kotlinOptions {
         jvmTarget = "11"
+        languageVersion = "1.9"
+        apiVersion = "1.9"
     }
     buildFeatures {
         compose = true
@@ -61,5 +65,16 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.material)
     implementation(libs.androidx.drawerlayout)
+
+    // Roomの拡張機能 ver2.6.1
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx.v287)
+    implementation(libs.jakewharton.threetenabp)
 
 }
