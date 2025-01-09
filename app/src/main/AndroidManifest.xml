@@ -13,7 +13,7 @@
         android:theme="@style/Theme.AppCompat"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat">
             <intent-filter>
@@ -23,7 +23,7 @@
         </activity>
 
         <activity
-            android:name=".TaskInputActivity"
+            android:name=".ui.TaskInputActivity"
             android:theme="@style/AppTheme"/>
     </application>
 
